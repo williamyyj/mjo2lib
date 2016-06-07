@@ -8,78 +8,74 @@ import com.ning.compress.lzf.*;
 /**
  * Helper class that allows use of LZF compression even if a library requires
  * use of {@link FileInputStream}.
- * <p>
- * Note that use of this class is not recommended unless you absolutely must use
- * a {@link FileInputStream} instance; otherwise basic {@link LZFInputStream}
+ *<p>
+ * Note that use of this class is not recommended unless you absolutely must
+ * use a {@link FileInputStream} instance; otherwise basic {@link LZFInputStream}
  * (which uses aggregation for underlying streams) is more appropriate
- * <p>
- * <p>
- * Implementation note: much of the code is just copied from
- * {@link LZFInputStream}, so care must be taken to keep implementations in sync
- * if there are fixes.
+ *<p>
+ *<p>
+ * Implementation note: much of the code is just copied from {@link LZFInputStream},
+ * so care must be taken to keep implementations in sync if there are fixes.
  */
 public class LZFFileInputStream
-    extends FileInputStream {
-
+    extends FileInputStream
+{
     /**
      * Underlying decoder in use.
      */
     protected final ChunkDecoder _decompressor;
-
+    
     /**
      * Object that handles details of buffer recycling
      */
     protected final BufferRecycler _recycler;
 
     /**
-     * Flag that indicates if we have already called 'inputStream.close()' (to
-     * avoid calling it multiple times)
+     * Flag that indicates if we have already called 'inputStream.close()'
+     * (to avoid calling it multiple times)
      */
     protected boolean _inputStreamClosed;
-
+    
     /**
-     * Flag that indicates whether we force full reads (reading of as many bytes
-     * as requested), or 'optimal' reads (up to as many as available, but at
-     * least one). Default is false, meaning that 'optimal' read is used.
+     * Flag that indicates whether we force full reads (reading of as many
+     * bytes as requested), or 'optimal' reads (up to as many as available,
+     * but at least one). Default is false, meaning that 'optimal' read
+     * is used.
      */
     protected boolean _cfgFullReads = false;
-
+        
     /**
      * the current buffer of compressed bytes (from which to decode)
-     *
-     */
+     * */
     protected byte[] _inputBuffer;
-
+        
     /**
      * the buffer of uncompressed bytes from which content is read
-     *
-     */
+     * */
     protected byte[] _decodedBytes;
-
+        
     /**
-     * The current position (next char to output) in the uncompressed bytes
-     * buffer.
-     *
-     */
+     * The current position (next char to output) in the uncompressed bytes buffer.
+     * */
     protected int _bufferPosition = 0;
-
+    
     /**
      * Length of the current uncompressed bytes buffer
-     *
-     */
+     * */
     protected int _bufferLength = 0;
 
     /**
-     * Wrapper object we use to allow decoder to read directly from the stream,
-     * without ending in infinite loop...
+     * Wrapper object we use to allow decoder to read directly from the
+     * stream, without ending in infinite loop...
      */
     protected final Wrapper _wrapper;
-
+    
     /*
-     ///////////////////////////////////////////////////////////////////////
-     // Construction, configuration
-     ///////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+    // Construction, configuration
+    ///////////////////////////////////////////////////////////////////////
      */
+
     public LZFFileInputStream(File file) throws FileNotFoundException {
         this(file, ChunkDecoderFactory.optimalInstance(), BufferRecycler.instance());
     }
@@ -91,20 +87,24 @@ public class LZFFileInputStream
     public LZFFileInputStream(String name) throws FileNotFoundException {
         this(name, ChunkDecoderFactory.optimalInstance(), BufferRecycler.instance());
     }
-
-    public LZFFileInputStream(File file, ChunkDecoder decompressor) throws FileNotFoundException {
+    
+    public LZFFileInputStream(File file, ChunkDecoder decompressor) throws FileNotFoundException
+    {
         this(file, decompressor, BufferRecycler.instance());
     }
 
-    public LZFFileInputStream(FileDescriptor fdObj, ChunkDecoder decompressor) {
+    public LZFFileInputStream(FileDescriptor fdObj, ChunkDecoder decompressor)
+    {
         this(fdObj, decompressor, BufferRecycler.instance());
     }
 
-    public LZFFileInputStream(String name, ChunkDecoder decompressor) throws FileNotFoundException {
+    public LZFFileInputStream(String name, ChunkDecoder decompressor) throws FileNotFoundException
+    {
         this(name, decompressor, BufferRecycler.instance());
     }
 
-    public LZFFileInputStream(File file, ChunkDecoder decompressor, BufferRecycler bufferRecycler) throws FileNotFoundException {
+    public LZFFileInputStream(File file, ChunkDecoder decompressor, BufferRecycler bufferRecycler) throws FileNotFoundException
+    {
         super(file);
         _decompressor = decompressor;
         _recycler = bufferRecycler;
@@ -114,7 +114,8 @@ public class LZFFileInputStream
         _wrapper = new Wrapper();
     }
 
-    public LZFFileInputStream(FileDescriptor fdObj, ChunkDecoder decompressor, BufferRecycler bufferRecycler) {
+    public LZFFileInputStream(FileDescriptor fdObj, ChunkDecoder decompressor, BufferRecycler bufferRecycler)
+    {
         super(fdObj);
         _decompressor = decompressor;
         _recycler = bufferRecycler;
@@ -124,7 +125,8 @@ public class LZFFileInputStream
         _wrapper = new Wrapper();
     }
 
-    public LZFFileInputStream(String name, ChunkDecoder decompressor, BufferRecycler bufferRecycler) throws FileNotFoundException {
+    public LZFFileInputStream(String name, ChunkDecoder decompressor, BufferRecycler bufferRecycler) throws FileNotFoundException
+    {
         super(name);
         _decompressor = decompressor;
         _recycler = bufferRecycler;
@@ -136,21 +138,23 @@ public class LZFFileInputStream
 
     /**
      * Method that can be used define whether reads should be "full" or
-     * "optimal": former means that full compressed blocks are read right away
-     * as needed, optimal that only smaller chunks are read at a time, more
-     * being read as needed.
+     * "optimal": former means that full compressed blocks are read right
+     * away as needed, optimal that only smaller chunks are read at a time,
+     * more being read as needed.
      */
     public void setUseFullReads(boolean b) {
         _cfgFullReads = b;
     }
-
+    
     /*
-     ///////////////////////////////////////////////////////////////////////
-     // FileInputStream overrides
-     ///////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+    // FileInputStream overrides
+    ///////////////////////////////////////////////////////////////////////
      */
+
     @Override
-    public int available() {
+    public int available()
+    {
         if (_inputStreamClosed) { // javadocs suggest 0 for closed as well (not -1)
             return 0;
         }
@@ -159,7 +163,8 @@ public class LZFFileInputStream
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() throws IOException
+    {
         _bufferPosition = _bufferLength = 0;
         byte[] buf = _inputBuffer;
         if (buf != null) {
@@ -179,10 +184,13 @@ public class LZFFileInputStream
 
     // fine as is: don't override
     // public FileChannel getChannel();
+
     // final, can't override:
     //public FileDescriptor getFD();
+
     @Override
-    public int read() throws IOException {
+    public int read() throws IOException
+    {
         if (!readyBuffer()) {
             return -1;
         }
@@ -190,12 +198,14 @@ public class LZFFileInputStream
     }
 
     @Override
-    public int read(byte[] b) throws IOException {
+    public int read(byte[] b) throws IOException
+    {
         return read(b, 0, b.length);
     }
 
     @Override
-    public int read(byte[] buffer, int offset, int length) throws IOException {
+    public int read(byte[] buffer, int offset, int length) throws IOException
+    {
         if (!readyBuffer()) {
             return -1;
         }
@@ -230,27 +240,29 @@ public class LZFFileInputStream
      * Overridden to just skip at most a single chunk at a time
      */
     /*
-     @Override
-     public long skip(long n) throws IOException
-     {
-     if (!readyBuffer()) {
-     return -1L;
-     }
-     int left = (_bufferLength - _bufferPosition);
-     // either way, just skip whatever we have decoded
-     if (left > n) {
-     left = (int) n;
-     }
-     _bufferPosition += left;
-     return left;
-     }
-     */
+    @Override
+    public long skip(long n) throws IOException
+    {
+        if (!readyBuffer()) {
+            return -1L;
+        }
+        int left = (_bufferLength - _bufferPosition);
+        // either way, just skip whatever we have decoded
+        if (left > n) {
+            left = (int) n;
+        }
+        _bufferPosition += left;
+        return left;
+    }
+    */
+
     /**
-     * Overridden to implement efficient skipping by skipping full chunks
-     * whenever possible.
+     * Overridden to implement efficient skipping by skipping full chunks whenever
+     * possible.
      */
     @Override
-    public long skip(long n) throws IOException {
+    public long skip(long n) throws IOException
+    {
         if (_inputStreamClosed) {
             return -1;
         }
@@ -288,7 +300,7 @@ public class LZFFileInputStream
                 return skipped;
             }
             // decoded buffer-full, more than max skip
-            _bufferLength = -(amount + 1);
+            _bufferLength = -(amount+1);
             skipped += n;
             _bufferPosition = (int) n;
             return skipped;
@@ -296,21 +308,23 @@ public class LZFFileInputStream
     }
 
     /*
-     ///////////////////////////////////////////////////////////////////////
-     // Extended public API
-     ///////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+    // Extended public API
+    ///////////////////////////////////////////////////////////////////////
      */
+    
     /**
-     * Convenience method that will read and uncompress all data available, and
-     * write it using given {@link OutputStream}. This avoids having to make an
-     * intermediate copy of uncompressed data which would be needed when doing
-     * the same manually.
-     *
+     * Convenience method that will read and uncompress all data available,
+     * and write it using given {@link OutputStream}. This avoids having to
+     * make an intermediate copy of uncompressed data which would be needed
+     * when doing the same manually.
+     * 
      * @param out OutputStream to use for writing content
-     *
+     * 
      * @return Number of bytes written (uncompressed)
      */
-    public int readAndWrite(OutputStream out) throws IOException {
+    public int readAndWrite(OutputStream out) throws IOException
+    {
         int total = 0;
 
         while (readyBuffer()) {
@@ -321,18 +335,19 @@ public class LZFFileInputStream
         }
         return total;
     }
-
+    
     /*
-     ///////////////////////////////////////////////////////////////////////
-     // Internal methods
-     ///////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+    // Internal methods
+    ///////////////////////////////////////////////////////////////////////
      */
+
     /**
      * Fill the uncompressed bytes buffer by reading the underlying inputStream.
-     *
      * @throws IOException
      */
-    protected boolean readyBuffer() throws IOException {
+    protected boolean readyBuffer() throws IOException
+    {
         if (_inputStreamClosed) {
             throw new IOException("Input stream closed");
         }
@@ -355,18 +370,20 @@ public class LZFFileInputStream
     protected final long skipRaw(long amount) throws IOException {
         return super.skip(amount);
     }
-
+    
     /*
-     ///////////////////////////////////////////////////////////////////////
-     // Helper class(es)
-     ///////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+    // Helper class(es)
+    ///////////////////////////////////////////////////////////////////////
      */
+
+
     /**
      * This simple wrapper is needed to re-route read calls so that they will
      * use "raw" reads
      */
-    private final class Wrapper extends InputStream {
-
+    private final class Wrapper extends InputStream
+    {
         @Override
         public void close() throws IOException {
             throw new UnsupportedOperationException();

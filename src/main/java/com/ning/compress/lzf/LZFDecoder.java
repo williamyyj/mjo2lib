@@ -52,6 +52,7 @@ public class LZFDecoder
      * Accessor method that can be used to obtain {@link ChunkDecoder}
      * that uses all possible optimization methods available, including
      * <code>sun.misc.Unsafe</code> for memory access.
+     * @return 
      */
     public static ChunkDecoder fastDecoder() {
         // race conditions are ok here, we don't really mind
@@ -67,6 +68,7 @@ public class LZFDecoder
      * Accessor method that can be used to obtain {@link ChunkDecoder}
      * that only uses standard JDK access methods, and should work on
      * all Java platforms and JVMs.
+     * @return 
      */
     public static ChunkDecoder safeDecoder() {
         // race conditions are ok here, we don't really mind

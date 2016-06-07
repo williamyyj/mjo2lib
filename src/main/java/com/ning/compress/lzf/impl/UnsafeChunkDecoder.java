@@ -3,10 +3,8 @@ package com.ning.compress.lzf.impl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-
-import sun.misc.Unsafe;
-
 import com.ning.compress.lzf.*;
+import sun.misc.Unsafe;
 
 /**
  * Highly optimized {@link ChunkDecoder} implementation that uses
@@ -21,12 +19,15 @@ import com.ning.compress.lzf.*;
 @SuppressWarnings("restriction")
 public class UnsafeChunkDecoder extends ChunkDecoder
 {
-    private static final Unsafe unsafe;
+    private static final Unsafe unsafe ;
     static {
         try {
+            // 應是相容性寫法
+            //   
             Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
             theUnsafe.setAccessible(true);
             unsafe = (Unsafe) theUnsafe.get(null);
+            //unsafe = Unsafe.getUnsafe();
         }
         catch (Exception e) {
             throw new RuntimeException(e);

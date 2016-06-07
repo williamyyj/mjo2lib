@@ -16,9 +16,6 @@
 package net.sf.cglib.beans;
 
 import java.security.ProtectionDomain;
-import java.beans.*;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
